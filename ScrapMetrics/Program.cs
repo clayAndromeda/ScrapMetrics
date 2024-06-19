@@ -13,9 +13,13 @@ static class Commands
 	/// </summary>
 	/// <param name="input">input json path</param>
 	/// <param name="output">-o, output png file path</param>
+	/// <param name="startYear">開始年</param>
+	/// <param name="endYear">終了年</param>
 	public static void ReadBackupFile(
 		[Argument] string input,
-		string output)
+		string output,
+		int? startYear = null,
+		int? endYear = null)
 	{
 		// pathのファイルを読み込む
 		var fileText = File.ReadAllText(input);
@@ -26,7 +30,18 @@ static class Commands
 		var monthlyPageGroups = scrapboxData.Pages
 			.Select(x => (p: x, DateTimeOffset.FromUnixTimeSeconds(x.Created).DateTime))
 			.GroupBy(x => (x.Item2.Year, x.Item2.Month))
-			.Where(x => x.Key.Year >= 2023)
+			.Where(x =>
+			{
+				// まず開始年でフィルタリング
+				if (startYear == null) return true; // 開始年フィルタなし
+				return x.Key.Year >= startYear.Value;
+			})
+			.Where(x =>
+			{
+				// 終了年でフィルタリング
+				if (endYear == null) return true; // 終了年フィルタなし
+				return x.Key.Year <= endYear.Value;
+			})
 			.ToArray();
 
 		foreach (var monthlyPageGroup in monthlyPageGroups)
